@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .success { border-color: #4CAF50; background: rgba(76, 175, 80, 0.1); }
+        .error { border-color: #f44336; background: rgba(244, 67, 54, 0.1); }
+        .warning { border-color: #ff9800; background: rgba(255, 152, 0, 0.1); }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Deployment Test</h1>
+    <p>This page tests if your files are loading correctly in deployment.</p>
+    
+    <div class="test-section" id="imageTest">
+        <h3>📸 Image Loading Test</h3>
+        <p>Testing if images from pics/ folder load correctly...</p>
+        <div id="imageResults"></div>
+    </div>
+    
+    <div class="test-section" id="musicTest">
+        <h3>🎵 Music Loading Test</h3>
+        <p>Testing if music files from musics/ folder are accessible...</p>
+        <div id="musicResults"></div>
+        <button onclick="testMusicFiles()">Test Music Files</button>
+    </div>
+    
+    <div class="test-section" id="pathTest">
+        <h3>🔗 Path Resolution Test</h3>
+        <p>Testing different path formats...</p>
+        <div id="pathResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔧 Quick Fixes</h3>
+        <button onclick="window.location.href='love.html'">Go to Main App</button>
+        <button onclick="testEverything()">Run All Tests</button>
+    </div>
+
+    <script>
+        // Test image loading
+        function testImages() {
+            const imageResults = document.getElementById('imageResults');
+            const testImages = ['1.jpg', '2.jpg', '3.jpg', 'stitch.png'];
+            let results = [];
+            
+            testImages.forEach(imgName => {
+                const img = new Image();
+                img.onload = () => {
+                    results.push(`✅ ${imgName} - OK`);
+                    updateImageResults(results);
+                };
+                img.onerror = () => {
+                    results.push(`❌ ${imgName} - Failed`);
+                    updateImageResults(results);
+                };
+                img.src = `pics/${imgName}`;
+            });
+        }
+        
+        function updateImageResults(results) {
+            const imageResults = document.getElementById('imageResults');
+            imageResults.innerHTML = `<div class="file-list">${results.join('<br>')}</div>`;
+        }
+        
+        // Test music file accessibility
+        function testMusicFiles() {
+            const musicResults = document.getElementById('musicResults');
+            const testMusic = [
+                'Be With You.mp3',
+                'Mario - Let Me Love You.mp3',
+                'Miguel - Sure Thing (Lyrics).mp3'
+            ];
+            
+            let results = [];
+            musicResults.innerHTML = '<p>Testing music files...</p>';
+            
+            testMusic.forEach(musicName => {
+                const audio = new Audio();
+                audio.oncanplaythrough = () => {
+                    results.push(`✅ ${musicName} - OK`);
+                    updateMusicResults(results);
+                };
+                audio.onerror = () => {
+                    results.push(`❌ ${musicName} - Failed`);
+                    updateMusicResults(results);
+                };
+                audio.src = `musics/${musicName}`;
+            });
+        }
+        
+        function updateMusicResults(results) {
+            const musicResults = document.getElementById('musicResults');
+            musicResults.innerHTML = `<div class="file-list">${results.join('<br>')}</div>`;
+        }
+        
+        // Test path resolution
+        function testPaths() {
+            const pathResults = document.getElementById('pathResults');
+            const paths = [
+                './pics/1.jpg',
+                'pics/1.jpg',
+                '/pics/1.jpg',
+                './musics/Be With You.mp3',
+                'musics/Be With You.mp3'
+            ];
+            
+            let results = [];
+            
+            paths.forEach(path => {
+                fetch(path, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            results.push(`✅ ${path} - Accessible`);
+                        } else {
+                            results.push(`❌ ${path} - Not found (${response.status})`);
+                        }
+                        updatePathResults(results);
+                    })
+                    .catch(() => {
+                        results.push(`❌ ${path} - Network error`);
+                        updatePathResults(results);
+                    });
+            });
+        }
+        
+        function updatePathResults(results) {
+            const pathResults = document.getElementById('pathResults');
+            pathResults.innerHTML = `<div class="file-list">${results.join('<br>')}</div>`;
+        }
+        
+        function testEverything() {
+            testImages();
+            testMusicFiles();
+            testPaths();
+        }
+        
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(testEverything, 500);
+        });
+    </script>
+</body>
+</html>
