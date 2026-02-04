@@ -8,9 +8,61 @@ class MusicController {
         this.musicFiles = [];
         this.isPlaying = false;
         this.isShuffleOn = true;
-        this.volume = 0.8; // INCREASED VOLUME - was 0.6
+        this.volume = 1.0; // MAXIMUM VOLUME
+        this.userInteractionSetup = false; // Prevent multiple interaction setups
+        
+        // Bind event handlers to maintain proper 'this' context
+        this.boundOnTrackEnded = this.onTrackEnded.bind(this);
+        this.boundOnTrackError = this.onTrackError.bind(this);
         
         console.log('🎵 MusicController initialized with volume:', this.volume);
+        
+        // Try immediate autoplay bypass
+        this.setupImmediateAutoplay();
+    }
+    
+    // Aggressive autoplay bypass - try multiple methods immediately
+    setupImmediateAutoplay() {
+        // Method 1: Try to create and play a silent audio immediately
+        try {
+            const silentAudio = new Audio();
+            silentAudio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmHgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+            silentAudio.volume = 0.01;
+            silentAudio.play().then(() => {
+                console.log('🎵 Silent audio bypass successful - autoplay should work');
+                this.autoplayEnabled = true;
+            }).catch(() => {
+                console.log('🎵 Silent audio bypass failed');
+                this.autoplayEnabled = false;
+            });
+        } catch (error) {
+            console.log('🎵 Silent audio creation failed');
+            this.autoplayEnabled = false;
+        }
+        
+        // Method 2: Setup immediate interaction capture
+        this.setupAggressiveInteractionCapture();
+    }
+    
+    // Capture ANY user interaction immediately
+    setupAggressiveInteractionCapture() {
+        const startMusicOnAnyInteraction = () => {
+            if (!this.isPlaying && this.musicFiles.length > 0) {
+                console.log('🎵 User interaction detected - starting music immediately');
+                this.startMusic();
+            }
+            // Remove listeners after first interaction
+            document.removeEventListener('click', startMusicOnAnyInteraction);
+            document.removeEventListener('keydown', startMusicOnAnyInteraction);
+            document.removeEventListener('touchstart', startMusicOnAnyInteraction);
+            document.removeEventListener('mousemove', startMusicOnAnyInteraction);
+        };
+        
+        // Listen for ANY interaction
+        document.addEventListener('click', startMusicOnAnyInteraction, { once: true });
+        document.addEventListener('keydown', startMusicOnAnyInteraction, { once: true });
+        document.addEventListener('touchstart', startMusicOnAnyInteraction, { once: true });
+        document.addEventListener('mousemove', startMusicOnAnyInteraction, { once: true });
     }
     
     // Load music files into the controller
@@ -24,50 +76,38 @@ class MusicController {
         }
     }
     
-    // Play specific track by index - IMPROVED CONFLICT HANDLING
+    // Play specific track by index - SINGLE INSTANCE ENFORCEMENT
     async playTrack(index) {
         if (index < 0 || index >= this.musicFiles.length) {
             console.error(`❌ Invalid track index: ${index}`);
             return false;
         }
         
-        // AGGRESSIVE CLEANUP - Stop ALL audio elements
-        if (this.currentAudio) {
-            console.log('🛑 Stopping current audio to prevent conflicts');
-            this.currentAudio.pause();
-            this.currentAudio.currentTime = 0;
-            this.currentAudio.removeEventListener('ended', this.onTrackEnded.bind(this));
-            this.currentAudio.removeEventListener('error', this.onTrackError.bind(this));
-            this.currentAudio = null;
-        }
-        
-        // Also stop any global currentAudio from old system
-        if (window.currentAudio) {
-            console.log('🛑 Stopping global currentAudio to prevent conflicts');
-            window.currentAudio.pause();
-            window.currentAudio = null;
-        }
+        // AGGRESSIVE CLEANUP - Stop ALL audio to ensure only one plays
+        this.stopAllAudio();
         
         const track = this.musicFiles[index];
-        console.log(`🎵 CLICK-TO-PLAY: Track ${index} - ${track.name}`);
+        console.log(`🎵 SINGLE-PLAY: Track ${index} - ${track.name}`);
         
         try {
-            // Small delay to ensure previous audio is fully stopped
-            await new Promise(resolve => setTimeout(resolve, 50));
+            // Wait a bit to ensure all audio is stopped
+            await new Promise(resolve => setTimeout(resolve, 100));
             
             this.currentAudio = new Audio(track.file);
-            this.currentAudio.volume = this.volume; // Set volume immediately
+            this.currentAudio.volume = this.volume;
             
             console.log(`🔊 Audio created with volume: ${this.volume} for ${track.name}`);
             
             // Add event listeners BEFORE playing
-            this.currentAudio.addEventListener('ended', this.onTrackEnded.bind(this));
-            this.currentAudio.addEventListener('error', this.onTrackError.bind(this));
+            this.currentAudio.addEventListener('ended', this.boundOnTrackEnded);
+            this.currentAudio.addEventListener('error', this.boundOnTrackError);
             
-            // Ensure volume is set before playing
+            // Ensure volume is set
             this.currentAudio.addEventListener('loadeddata', () => {
-                this.currentAudio.volume = this.volume;
-                console.log(`🔊 Volume confirmed: ${this.currentAudio.volume}`);
+                if (this.currentAudio) {
+                    this.currentAudio.volume = this.volume;
+                    console.log(`🔊 Volume confirmed: ${this.currentAudio.volume}`);
+                }
             });
             
             // Play with proper error handling
@@ -77,7 +117,7 @@ class MusicController {
                 this.isPlaying = true;
                 this.currentTrackIndex = index;
                 
-                console.log(`✅ CLICK-TO-PLAY SUCCESS: ${track.name} at volume ${this.currentAudio.volume}`);
+                console.log(`✅ SINGLE-PLAY SUCCESS: ${track.name} at volume ${this.currentAudio.volume}`);
                 
                 // Update UI
                 this.updateUI();
@@ -88,11 +128,10 @@ class MusicController {
         } catch (error) {
             console.error(`❌ Failed to play ${track.name}:`, error);
             
-            // If it's an AbortError, try again after a longer delay
+            // Don't retry on AbortError to prevent multiple instances
             if (error.name === 'AbortError') {
-                console.log('🔄 AbortError detected, retrying after cleanup...');
-                await new Promise(resolve => setTimeout(resolve, 200));
-                return this.playTrack(index); // Retry once
+                console.log('🛑 AbortError - not retrying to prevent conflicts');
+                return false;
             }
             
             return false;
@@ -121,7 +160,7 @@ class MusicController {
         });
     }
     
-    // Next track function
+    // Next track function - SINGLE INSTANCE ENFORCEMENT
     async nextTrack() {
         console.log('🔄 Next track requested');
         
@@ -129,6 +168,9 @@ class MusicController {
             console.log('❌ No music files available');
             return false;
         }
+        
+        // Stop all audio first to prevent overlaps
+        this.stopAllAudio();
         
         let nextIndex;
         
@@ -143,10 +185,14 @@ class MusicController {
         }
         
         console.log(`🔄 Next: ${this.currentTrackIndex} → ${nextIndex}`);
+        
+        // Small delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         return await this.playTrack(nextIndex);
     }
     
-    // Previous track function
+    // Previous track function - SINGLE INSTANCE ENFORCEMENT
     async previousTrack() {
         console.log('🔄 Previous track requested');
         
@@ -154,6 +200,9 @@ class MusicController {
             console.log('❌ No music files available');
             return false;
         }
+        
+        // Stop all audio first to prevent overlaps
+        this.stopAllAudio();
         
         let prevIndex;
         
@@ -168,10 +217,14 @@ class MusicController {
         }
         
         console.log(`🔄 Previous: ${this.currentTrackIndex} → ${prevIndex}`);
+        
+        // Small delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         return await this.playTrack(prevIndex);
     }
     
-    // Auto-start music with shuffle
+    // Auto-start music with shuffle - AGGRESSIVE AUTOPLAY
     async startMusic() {
         console.log('🎵 Starting music automatically with shuffle');
         
@@ -188,50 +241,265 @@ class MusicController {
         console.log(`🎵 Auto-starting with shuffled track: ${this.musicFiles[startIndex].name}`);
         
         try {
-            // Try to play immediately
-            const success = await this.playTrack(startIndex);
-            if (success) {
-                console.log('✅ Music auto-started successfully!');
-                return true;
-            } else {
-                console.log('⚠️ Auto-start failed, setting up user interaction trigger');
-                this.setupUserInteractionTrigger();
-                return false;
+            // AGGRESSIVE APPROACH: Try multiple methods simultaneously
+            
+            // Method 1: Direct play attempt (no delay)
+            const directPlay = this.playTrack(startIndex);
+            
+            // Method 2: Force start with very low volume first
+            const lowVolumePlay = this.tryLowVolumeStart(startIndex);
+            
+            // Method 3: Create multiple audio instances and try them all
+            const multiInstancePlay = this.tryMultipleInstances(startIndex);
+            
+            // Wait for any of them to succeed
+            const results = await Promise.allSettled([directPlay, lowVolumePlay, multiInstancePlay]);
+            
+            // Check if any succeeded
+            for (let i = 0; i < results.length; i++) {
+                if (results[i].status === 'fulfilled' && results[i].value === true) {
+                    console.log(`✅ Music started successfully with method ${i + 1}!`);
+                    return true;
+                }
             }
+            
+            console.log('⚠️ All autoplay methods failed, setting up interaction trigger');
+            this.setupUserInteractionTrigger();
+            return false;
+            
         } catch (error) {
-            console.log('⚠️ Auto-start blocked by browser, setting up user interaction trigger');
+            console.log('❌ Auto-start failed:', error.message);
             this.setupUserInteractionTrigger();
             return false;
         }
     }
     
-    // Setup user interaction trigger for autoplay
+    // Try starting with very low volume first, then increase
+    async tryLowVolumeStart(index) {
+        try {
+            const track = this.musicFiles[index];
+            const audio = new Audio(track.file);
+            audio.volume = 0.01; // Very low volume
+            
+            await audio.play();
+            
+            // If successful, gradually increase volume
+            const increaseVolume = () => {
+                if (audio.volume < this.volume) {
+                    audio.volume = Math.min(audio.volume + 0.1, this.volume);
+                    setTimeout(increaseVolume, 100);
+                }
+            };
+            
+            setTimeout(increaseVolume, 500);
+            
+            // Replace current audio
+            this.stopAllAudio();
+            this.currentAudio = audio;
+            this.isPlaying = true;
+            this.currentTrackIndex = index;
+            
+            // Add event listeners
+            this.currentAudio.addEventListener('ended', this.boundOnTrackEnded);
+            this.currentAudio.addEventListener('error', this.boundOnTrackError);
+            
+            console.log('✅ Low-volume bypass successful!');
+            return true;
+            
+        } catch (error) {
+            console.log('❌ Low-volume bypass failed:', error.message);
+            return false;
+        }
+    }
+    
+    // Try creating multiple audio instances
+    async tryMultipleInstances(index) {
+        try {
+            const track = this.musicFiles[index];
+            const promises = [];
+            
+            // Create 3 different audio instances with slight variations
+            for (let i = 0; i < 3; i++) {
+                const audio = new Audio(track.file);
+                audio.volume = this.volume * (0.8 + i * 0.1); // Slightly different volumes
+                
+                const promise = new Promise(async (resolve) => {
+                    try {
+                        await audio.play();
+                        resolve({ success: true, audio });
+                    } catch (error) {
+                        resolve({ success: false, error });
+                    }
+                });
+                
+                promises.push(promise);
+            }
+            
+            const results = await Promise.all(promises);
+            
+            // Use the first successful one
+            for (const result of results) {
+                if (result.success) {
+                    this.stopAllAudio();
+                    this.currentAudio = result.audio;
+                    this.isPlaying = true;
+                    this.currentTrackIndex = index;
+                    
+                    // Add event listeners
+                    this.currentAudio.addEventListener('ended', this.boundOnTrackEnded);
+                    this.currentAudio.addEventListener('error', this.boundOnTrackError);
+                    
+                    console.log('✅ Multi-instance bypass successful!');
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (error) {
+            console.log('❌ Multi-instance bypass failed:', error.message);
+            return false;
+        }
+    }
+    
+    // Force start music with multiple bypass techniques
+    async forceStartMusic() {
+        console.log('🎵 FORCE START: Attempting aggressive music start');
+        
+        if (this.musicFiles.length === 0) {
+            console.log('❌ No music files for force start');
+            return false;
+        }
+        
+        const track = this.musicFiles[0];
+        console.log(`🎵 FORCE START: ${track.name}`);
+        
+        try {
+            // Stop everything first
+            this.stopAllAudio();
+            
+            // Create audio with multiple bypass attempts
+            const audio = new Audio();
+            
+            // Set source and properties
+            audio.src = track.file;
+            audio.volume = 0.1; // Start with low volume
+            audio.preload = 'auto';
+            
+            // Try to load and play
+            audio.load();
+            
+            // Wait for audio to be ready
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
+                
+                audio.addEventListener('canplaythrough', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                }, { once: true });
+                
+                audio.addEventListener('error', () => {
+                    clearTimeout(timeout);
+                    reject(new Error('Load error'));
+                }, { once: true });
+            });
+            
+            // Now try to play
+            await audio.play();
+            
+            // If successful, set proper volume and update controller
+            audio.volume = this.volume;
+            this.currentAudio = audio;
+            this.isPlaying = true;
+            this.currentTrackIndex = 0;
+            
+            // Add event listeners
+            this.currentAudio.addEventListener('ended', this.boundOnTrackEnded);
+            this.currentAudio.addEventListener('error', this.boundOnTrackError);
+            
+            console.log('✅ FORCE START SUCCESS!');
+            this.updateUI();
+            return true;
+            
+        } catch (error) {
+            console.log('❌ FORCE START failed:', error.message);
+            
+            // Final fallback - setup interaction trigger
+            this.setupUserInteractionTrigger();
+            return false;
+        }
+    }
+    
+    // Setup user interaction trigger for autoplay - SINGLE INSTANCE ONLY
     setupUserInteractionTrigger() {
         console.log('🎵 Setting up user interaction trigger for music');
+        
+        // Prevent multiple triggers
+        if (this.userInteractionSetup) {
+            console.log('🎵 User interaction already set up, skipping');
+            return;
+        }
+        this.userInteractionSetup = true;
         
         const startMusicOnInteraction = async (event) => {
             console.log('🎵 User interaction detected, starting music:', event.type);
             
+            // Remove ALL event listeners immediately to prevent multiple triggers
+            document.removeEventListener('click', startMusicOnInteraction);
+            document.removeEventListener('keydown', startMusicOnInteraction);
+            document.removeEventListener('touchstart', startMusicOnInteraction);
+            
             try {
+                // Stop any existing audio first
+                this.stopAllAudio();
+                
                 const success = await this.playTrack(0);
                 if (success) {
                     console.log('✅ Music started after user interaction');
-                    // Remove event listeners after successful start
-                    document.removeEventListener('click', startMusicOnInteraction);
-                    document.removeEventListener('keydown', startMusicOnInteraction);
-                    document.removeEventListener('touchstart', startMusicOnInteraction);
+                } else {
+                    console.log('❌ Failed to start music after interaction');
                 }
             } catch (error) {
                 console.error('❌ Failed to start music after interaction:', error);
             }
         };
         
-        // Add multiple event listeners for user interaction
+        // Add event listeners with { once: true } to ensure they only fire once
         document.addEventListener('click', startMusicOnInteraction, { once: true });
         document.addEventListener('keydown', startMusicOnInteraction, { once: true });
         document.addEventListener('touchstart', startMusicOnInteraction, { once: true });
         
         console.log('🎵 User interaction triggers set up - music will start on first click/key/touch');
+    }
+    
+    // Stop all audio instances to prevent conflicts
+    stopAllAudio() {
+        console.log('🛑 Stopping ALL audio instances');
+        
+        // Stop current music controller audio
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+            this.currentAudio.removeEventListener('ended', this.boundOnTrackEnded);
+            this.currentAudio.removeEventListener('error', this.boundOnTrackError);
+            this.currentAudio = null;
+        }
+        
+        // Stop any global audio from old system
+        if (window.currentAudio) {
+            window.currentAudio.pause();
+            window.currentAudio = null;
+        }
+        
+        // Stop all audio elements on the page
+        const allAudioElements = document.querySelectorAll('audio');
+        allAudioElements.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+        
+        this.isPlaying = false;
+        console.log('🛑 All audio stopped');
     }
     
     // Shuffle the music files array
@@ -340,11 +608,21 @@ window.startMusicController = function(musicFiles) {
     
     window.musicController.loadMusicFiles(musicFiles);
     
-    // Start music immediately after loading
-    setTimeout(() => {
-        console.log('🎵 Auto-starting music after controller initialization...');
-        window.musicController.startMusic();
-    }, 100);
+    // IMMEDIATE START - no delays
+    console.log('🎵 Starting music IMMEDIATELY...');
+    window.musicController.startMusic().then(success => {
+        if (success) {
+            console.log('✅ Music controller started successfully!');
+        } else {
+            console.log('⚠️ Music controller needs user interaction');
+            
+            // Try again with a more aggressive approach
+            setTimeout(() => {
+                console.log('🔄 Attempting aggressive music start...');
+                window.musicController.forceStartMusic();
+            }, 500);
+        }
+    });
 };
 
 // Global function to play specific track when clicked in music list
@@ -356,3 +634,36 @@ window.playTrackFromList = function(trackIndex) {
 };
 
 console.log('🎵 MusicController.js loaded successfully');
+
+// AGGRESSIVE AUTOPLAY: Try to start music as soon as possible
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('🎵 DOM loaded - attempting immediate music start');
+    
+    // Try to start music immediately when DOM is ready
+    setTimeout(() => {
+        if (window.musicController && window.musicController.musicFiles.length > 0) {
+            console.log('🎵 Attempting immediate autoplay on DOM ready');
+            window.musicController.startMusic();
+        }
+    }, 100);
+});
+
+// Also try when window fully loads
+window.addEventListener('load', () => {
+    console.log('🎵 Window loaded - attempting immediate music start');
+    
+    setTimeout(() => {
+        if (window.musicController && window.musicController.musicFiles.length > 0 && !window.musicController.isPlaying) {
+            console.log('🎵 Attempting immediate autoplay on window load');
+            window.musicController.startMusic();
+        }
+    }, 200);
+});
+
+// Try on any user interaction with the page
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && window.musicController && window.musicController.musicFiles.length > 0 && !window.musicController.isPlaying) {
+        console.log('🎵 Page became visible - attempting music start');
+        window.musicController.startMusic();
+    }
+});

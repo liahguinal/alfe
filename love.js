@@ -168,6 +168,29 @@ function completeLoading() {
     }, 500);
 }
 
+// Function to start music and slideshow with user interaction
+function startMusicAndSlideshow() {
+    const musicPromptOverlay = document.getElementById('musicPromptOverlay');
+    
+    // Hide the prompt
+    if (musicPromptOverlay) {
+        musicPromptOverlay.style.display = 'none';
+    }
+    
+    // Start music with user interaction
+    if (window.musicController && musicFiles.length > 0) {
+        console.log('🎵 Starting music with user interaction...');
+        window.musicController.startMusic();
+    }
+    
+    // Ensure slideshow is running
+    if (!isSystemReady) {
+        startSlideshow();
+        updateStatus();
+        isSystemReady = true;
+    }
+}
+
 // Initialize system with loading screen
 async function initializeSystem() {
     const loadingScreen = document.getElementById('loadingScreen');
@@ -236,20 +259,30 @@ async function initializeSystem() {
                 console.log('🎵 STARTING MUSIC WITH DEDICATED CONTROLLER');
                 console.log(`🎵 Available music files: ${musicFiles.length}`);
                 
-                // Start music controller immediately - NO DELAYS OR FALLBACKS
+                // AGGRESSIVE IMMEDIATE START - Multiple attempts
                 if (window.musicController) {
-                    console.log('🎵 Music controller available, starting immediately...');
+                    console.log('🎵 Music controller available, starting AGGRESSIVELY...');
+                    
+                    // Attempt 1: Immediate start
                     window.startMusicController(musicFiles);
                     
-                    // Quick check to ensure it started
+                    // Attempt 2: Force start after very short delay
                     setTimeout(() => {
-                        if (window.musicController.isPlaying) {
-                            console.log('✅ Music successfully started!');
+                        if (!window.musicController.isPlaying) {
+                            console.log('🔄 First attempt failed, trying force start...');
+                            window.musicController.forceStartMusic();
                         } else {
-                            console.log('🔄 Quick check: restarting music...');
+                            console.log('✅ Music successfully started on first attempt!');
+                        }
+                    }, 50);
+                    
+                    // Attempt 3: Final check and retry
+                    setTimeout(() => {
+                        if (!window.musicController.isPlaying) {
+                            console.log('🔄 Final attempt: aggressive restart...');
                             window.musicController.startMusic();
                         }
-                    }, 100);
+                    }, 200);
                 } else {
                     console.log('❌ Music controller not available');
                 }
@@ -430,7 +463,7 @@ async function loadMusicFilesWithProgress(progressElement, loadingText) {
                     
                     musicFiles.push({
                         name: displayName,
-                        file: `musics/${filename}`,
+                        file: `musics/${encodeURIComponent(filename)}`,
                         duration: '0:00'
                     });
                     
@@ -531,7 +564,7 @@ async function loadMusicFilesOnStartup() {
                     
                     musicFiles.push({
                         name: displayName,
-                        file: `musics/${filename}`,
+                        file: `musics/${encodeURIComponent(filename)}`,
                         duration: '0:00'
                     });
                     resolve();
