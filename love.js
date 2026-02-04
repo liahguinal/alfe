@@ -18,20 +18,30 @@ let isSystemReady = false;
 
 // Your actual music files from the musics folder
 const actualMusicFiles = [
+    '679 (1960\'s Soul Cover).mp3',
+    'AYA  HEAVEN KNOWS (RNB Cover).mp3',
     'Be With You.mp3',
+    'Beautiful Girls (1960\'s Soul Jazz).mp3',
+    'BROCKHAMPTON - SUGAR (Lyrics).mp3',
     'Cean Jr. - YK (Official Audio).mp3',
     'Doja Cat - So High (Official Audio).mp3',
     'Don Toliver - You (feat. Travis Scott) [Official Audio].mp3',
+    'Incomplete.mp3',
     'Justin Bieber - Confident ft. Chance The Rapper (Official Audio).mp3',
     'Justin Bieber - Right Here ft. Drake (Official Audio).mp3',
-    'Kid Ink - Main Chick feat. Chris Brown.mp3',
+    'LeAnn Rimes - How Do I Live [Lyrics].mp3',
     'Lloyd - All I Need (Prod. Slade Da Monsta).mp3',
+    'Maikee\'s Letters.mp3',
     'Mario - How Do I Breathe (Lyrics).mp3',
     'Mario - Let Me Love You.mp3',
+    'Masiram (feat. Paul Royale).mp3',
     'Miguel - Sure Thing (Lyrics).mp3',
+    'MYSB (Miss You so Bad).mp3',
+    'Nickelback - Far Away  Lyrics.mp3',
+    'One Wish.mp3',
     'Sexy Lady.mp3',
-    'T-Pain - Buy U A Drank (Lyrics) ft. Yung Joc.mp3',
-    'VEDO - You Got It (Lyrics) it\'s time to boss up fix your credit girl get at it.mp3',
+    'Tamia - Officially Missing You (Cover by Carl B).mp3',
+    'Vedo - Fine Shyt (Official Audio).mp3',
     'Vedo - Yvette feat. Inayah Lamis (Lyric Video).mp3'
 ];
 
@@ -68,7 +78,7 @@ async function detectAvailableImages() {
     const knownImages = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
         11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-        21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
     ];
     
     const imageCheckPromises = [];
@@ -347,7 +357,7 @@ async function detectAvailableImagesWithProgress(progressElement, loadingText) {
     const knownImages = [
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
         11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-        21, 22, 23, 24, 26, 27, 28, 29, 30, 31, 32
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
     ];
     const maxImages = knownImages.length;
     const imageCheckPromises = [];
@@ -2755,6 +2765,11 @@ document.addEventListener('DOMContentLoaded', () => {
         createFloatingHearts();
     }, 1000);
     
+    // Initialize draggable hearts logo
+    setTimeout(() => {
+        initializeDraggableLogo();
+    }, 1500);
+    
     // Start system initialization with loading screen
     initializeSystem();
     
@@ -2803,3 +2818,217 @@ document.addEventListener('DOMContentLoaded', () => {
         createTrackChangeHearts(); // Create hearts on slideshow toggle
     };
 });
+
+// YELLOW HEARTS GENERATOR WITH DRAGGABLE LOGO
+let isLogoDragging = false;
+let logoDragOffset = { x: 0, y: 0 };
+
+function createYellowHearts() {
+    console.log('💛 Creating gentle yellow hearts!');
+    
+    // Get the minions logo position
+    const logo = document.getElementById('yellowHeartsLogo');
+    const logoRect = logo.getBoundingClientRect();
+    const startX = logoRect.left + logoRect.width / 2;
+    const startY = logoRect.top + logoRect.height / 2;
+    
+    // Create multiple gentle yellow hearts
+    for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+            const heart = document.createElement('div');
+            heart.className = 'yellow-heart';
+            heart.textContent = '💛';
+            
+            // Set starting position at the logo
+            heart.style.left = startX + 'px';
+            heart.style.top = startY + 'px';
+            
+            // Gentler random horizontal movement
+            const randomX = (Math.random() - 0.5) * 200; // -100px to +100px (reduced)
+            heart.style.setProperty('--random-x', randomX + 'px');
+            
+            document.body.appendChild(heart);
+            
+            // Remove heart after animation completes
+            setTimeout(() => {
+                if (heart.parentNode) {
+                    heart.parentNode.removeChild(heart);
+                }
+            }, 12000); // Longer duration for gentler effect
+        }, i * 150); // Slower stagger
+    }
+    
+    // Show notification
+    //showNotification('💛 Gentle yellow hearts spreading love!');
+    
+    // Create interaction hearts at logo position
+    createInteractionHearts(startX, startY);
+}
+
+// Initialize draggable functionality for the hearts logo
+function initializeDraggableLogo() {
+    const logoContainer = document.getElementById('heartsLogoContainer');
+    const logo = document.getElementById('yellowHeartsLogo');
+    
+    if (!logoContainer || !logo) return;
+    
+    let lastHeartTime = 0;
+    const heartInterval = 300; // Create heart every 300ms while dragging
+    
+    // Mouse events
+    logo.addEventListener('mousedown', startLogoDrag);
+    document.addEventListener('mousemove', dragLogo);
+    document.addEventListener('mouseup', endLogoDrag);
+    
+    // Touch events for mobile
+    logo.addEventListener('touchstart', startLogoDragTouch, { passive: false });
+    document.addEventListener('touchmove', dragLogoTouch, { passive: false });
+    document.addEventListener('touchend', endLogoDrag);
+    
+    function startLogoDrag(e) {
+        e.preventDefault();
+        isLogoDragging = true;
+        lastHeartTime = Date.now();
+        
+        const rect = logoContainer.getBoundingClientRect();
+        logoDragOffset.x = e.clientX - rect.left;
+        logoDragOffset.y = e.clientY - rect.top;
+        
+        logoContainer.classList.add('dragging');
+        logo.style.cursor = 'grabbing';
+        
+        // Create first heart when starting to drag
+        createSingleYellowHeart();
+    }
+    
+    function startLogoDragTouch(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        isLogoDragging = true;
+        lastHeartTime = Date.now();
+        
+        const rect = logoContainer.getBoundingClientRect();
+        logoDragOffset.x = touch.clientX - rect.left;
+        logoDragOffset.y = touch.clientY - rect.top;
+        
+        logoContainer.classList.add('dragging');
+        
+        // Create first heart when starting to drag
+        createSingleYellowHeart();
+    }
+    
+    function dragLogo(e) {
+        if (!isLogoDragging) return;
+        e.preventDefault();
+        
+        const x = e.clientX - logoDragOffset.x;
+        const y = e.clientY - logoDragOffset.y;
+        
+        // Keep within viewport bounds
+        const maxX = window.innerWidth - logoContainer.offsetWidth;
+        const maxY = window.innerHeight - logoContainer.offsetHeight;
+        
+        const boundedX = Math.max(0, Math.min(x, maxX));
+        const boundedY = Math.max(0, Math.min(y, maxY));
+        
+        logoContainer.style.left = boundedX + 'px';
+        logoContainer.style.top = boundedY + 'px';
+        
+        // Create gentle hearts while dragging
+        const currentTime = Date.now();
+        if (currentTime - lastHeartTime > heartInterval) {
+            createSingleYellowHeart();
+            lastHeartTime = currentTime;
+        }
+    }
+    
+    function dragLogoTouch(e) {
+        if (!isLogoDragging) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const x = touch.clientX - logoDragOffset.x;
+        const y = touch.clientY - logoDragOffset.y;
+        
+        // Keep within viewport bounds
+        const maxX = window.innerWidth - logoContainer.offsetWidth;
+        const maxY = window.innerHeight - logoContainer.offsetHeight;
+        
+        const boundedX = Math.max(0, Math.min(x, maxX));
+        const boundedY = Math.max(0, Math.min(y, maxY));
+        
+        logoContainer.style.left = boundedX + 'px';
+        logoContainer.style.top = boundedY + 'px';
+        
+        // Create gentle hearts while dragging on mobile
+        const currentTime = Date.now();
+        if (currentTime - lastHeartTime > heartInterval) {
+            createSingleYellowHeart();
+            lastHeartTime = currentTime;
+        }
+    }
+    
+    function endLogoDrag() {
+        if (!isLogoDragging) return;
+        
+        isLogoDragging = false;
+        logoContainer.classList.remove('dragging');
+        logo.style.cursor = 'grab';
+        
+        // Create final heart when stopping drag
+        createSingleYellowHeart();
+        
+        // Save position to localStorage
+        const rect = logoContainer.getBoundingClientRect();
+        localStorage.setItem('heartsLogoPosition', JSON.stringify({
+            x: rect.left,
+            y: rect.top
+        }));
+    }
+    
+    // Load saved position
+    const savedPosition = localStorage.getItem('heartsLogoPosition');
+    if (savedPosition) {
+        try {
+            const pos = JSON.parse(savedPosition);
+            logoContainer.style.left = pos.x + 'px';
+            logoContainer.style.top = pos.y + 'px';
+        } catch (e) {
+            console.log('Could not load saved logo position');
+        }
+    }
+    
+    // Set initial cursor
+    logo.style.cursor = 'grab';
+}
+
+// Create a single gentle yellow heart at logo position
+function createSingleYellowHeart() {
+    const logo = document.getElementById('yellowHeartsLogo');
+    if (!logo) return;
+    
+    const logoRect = logo.getBoundingClientRect();
+    const startX = logoRect.left + logoRect.width / 2;
+    const startY = logoRect.top + logoRect.height / 2;
+    
+    const heart = document.createElement('div');
+    heart.className = 'yellow-heart';
+    heart.textContent = '💛';
+    
+    // Set starting position at the logo
+    heart.style.left = startX + 'px';
+    heart.style.top = startY + 'px';
+    
+    // Gentler random horizontal movement
+    const randomX = (Math.random() - 0.5) * 120; // -60px to +60px (even gentler)
+    heart.style.setProperty('--random-x', randomX + 'px');
+    
+    document.body.appendChild(heart);
+    
+    // Remove heart after animation completes
+    setTimeout(() => {
+        if (heart.parentNode) {
+            heart.parentNode.removeChild(heart);
+        }
+    }, 12000);
+}
