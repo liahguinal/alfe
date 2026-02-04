@@ -16,34 +16,45 @@ let musicFiles = [];
 let filteredMusicFiles = [];
 let isSystemReady = false;
 
-// Your actual music files from the musics folder - with proper paths
+// Your actual music files from the musics folder - just filenames
 const actualMusicFiles = [
-    'musics/679 (1960\'s Soul Cover).mp3',
-    'musics/AYA  HEAVEN KNOWS (RNB Cover).mp3',
-    'musics/Be With You.mp3',
-    'musics/Beautiful Girls (1960\'s Soul Jazz).mp3',
-    'musics/BROCKHAMPTON - SUGAR (Lyrics).mp3',
-    'musics/Cean Jr. - YK (Official Audio).mp3',
-    'musics/Doja Cat - So High (Official Audio).mp3',
-    'musics/Don Toliver - You (feat. Travis Scott) [Official Audio].mp3',
-    'musics/Incomplete.mp3',
-    'musics/Justin Bieber - Confident ft. Chance The Rapper (Official Audio).mp3',
-    'musics/Justin Bieber - Right Here ft. Drake (Official Audio).mp3',
-    'musics/LeAnn Rimes - How Do I Live [Lyrics].mp3',
-    'musics/Lloyd - All I Need (Prod. Slade Da Monsta).mp3',
-    'musics/Maikee\'s Letters.mp3',
-    'musics/Mario - How Do I Breathe (Lyrics).mp3',
-    'musics/Mario - Let Me Love You.mp3',
-    'musics/Masiram (feat. Paul Royale).mp3',
-    'musics/Miguel - Sure Thing (Lyrics).mp3',
-    'musics/MYSB (Miss You so Bad).mp3',
-    'musics/Nickelback - Far Away  Lyrics.mp3',
-    'musics/One Wish.mp3',
-    'musics/Sexy Lady.mp3',
-    'musics/Tamia - Officially Missing You (Cover by Carl B).mp3',
-    'musics/Vedo - Fine Shyt (Official Audio).mp3',
-    'musics/Vedo - Yvette feat. Inayah Lamis (Lyric Video).mp3'
+    '679 (1960\'s Soul Cover).mp3',
+    'AYA  HEAVEN KNOWS (RNB Cover).mp3',
+    'Be With You.mp3',
+    'Beautiful Girls (1960\'s Soul Jazz).mp3',
+    'BROCKHAMPTON - SUGAR (Lyrics).mp3',
+    'Cean Jr. - YK (Official Audio).mp3',
+    'Doja Cat - So High (Official Audio).mp3',
+    'Don Toliver - You (feat. Travis Scott) [Official Audio].mp3',
+    'Incomplete.mp3',
+    'Justin Bieber - Confident ft. Chance The Rapper (Official Audio).mp3',
+    'Justin Bieber - Right Here ft. Drake (Official Audio).mp3',
+    'LeAnn Rimes - How Do I Live [Lyrics].mp3',
+    'Lloyd - All I Need (Prod. Slade Da Monsta).mp3',
+    'Maikee\'s Letters.mp3',
+    'Mario - How Do I Breathe (Lyrics).mp3',
+    'Mario - Let Me Love You.mp3',
+    'Masiram (feat. Paul Royale).mp3',
+    'Miguel - Sure Thing (Lyrics).mp3',
+    'MYSB (Miss You so Bad).mp3',
+    'Nickelback - Far Away  Lyrics.mp3',
+    'One Wish.mp3',
+    'Sexy Lady.mp3',
+    'Tamia - Officially Missing You (Cover by Carl B).mp3',
+    'Vedo - Fine Shyt (Official Audio).mp3',
+    'Vedo - Yvette feat. Inayah Lamis (Lyric Video).mp3'
 ];
+
+// Function to get proper music file path for deployment
+function getMusicFilePath(filename) {
+    // Try different path variations for deployment compatibility
+    const paths = [
+        `./musics/${filename}`,
+        `musics/${filename}`,
+        `/musics/${filename}`
+    ];
+    return paths[0]; // Use relative path with ./
+}
 
 // Available background GIFs
 const backgroundGifs = [
@@ -449,7 +460,7 @@ async function loadMusicFilesWithProgress(progressElement, loadingText) {
     // Load music files with progress updates
     const loadPromises = actualMusicFiles.map(async (filename, index) => {
         try {
-            const audio = new Audio(`musics/${filename}`);
+            const audio = new Audio(getMusicFilePath(filename));
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
                     console.log(`⏰ Timeout loading: ${filename}`);
@@ -473,7 +484,7 @@ async function loadMusicFilesWithProgress(progressElement, loadingText) {
                     
                     musicFiles.push({
                         name: displayName,
-                        file: `musics/${encodeURIComponent(filename)}`,
+                        file: getMusicFilePath(encodeURIComponent(filename)),
                         duration: '0:00'
                     });
                     
