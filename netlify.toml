@@ -1,0 +1,15 @@
+[build]
+  publish = "."
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/love.html"
+  status = 200
+
+[dev]
+  command = "npm run dev"
+  port = 186

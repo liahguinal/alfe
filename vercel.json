@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "name": "galaxylove-romantic-app",
+  "builds": [
+    {
+      "src": "love.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/love.html"
+    }
+  ]
+}
