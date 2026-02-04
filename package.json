@@ -1,0 +1,17 @@
+{
+  "name": "picture-app-switcher",
+  "version": "1.0.0",
+  "description": "Picture app switcher with smooth transitions",
+  "main": "love.html",
+  "scripts": {
+    "dev": "live-server --port=186 --open=love.html",
+    "start": "live-server --port=186 --open=love.html",
+    "build": "echo 'No build process needed for static files'"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "keywords": ["picture", "gallery", "transitions", "javascript"],
+  "author": "",
+  "license": "MIT"
+}
