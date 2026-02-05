@@ -86,6 +86,9 @@ class MusicController {
         // AGGRESSIVE CLEANUP - Stop ALL audio to ensure only one plays
         this.stopAllAudio();
         
+        // Wait longer for cleanup to complete and prevent AbortError
+        await new Promise(resolve => setTimeout(resolve, 250));
+        
         const track = this.musicFiles[index];
         console.log(`🎵 SINGLE-PLAY: Track ${index} - ${track.name}`);
         
@@ -478,24 +481,36 @@ class MusicController {
         
         // Stop current music controller audio
         if (this.currentAudio) {
-            this.currentAudio.pause();
-            this.currentAudio.currentTime = 0;
-            this.currentAudio.removeEventListener('ended', this.boundOnTrackEnded);
-            this.currentAudio.removeEventListener('error', this.boundOnTrackError);
+            try {
+                this.currentAudio.pause();
+                this.currentAudio.currentTime = 0;
+                this.currentAudio.removeEventListener('ended', this.boundOnTrackEnded);
+                this.currentAudio.removeEventListener('error', this.boundOnTrackError);
+            } catch (error) {
+                console.log('🔧 Audio cleanup error (normal):', error.message);
+            }
             this.currentAudio = null;
         }
         
         // Stop any global audio from old system
         if (window.currentAudio) {
-            window.currentAudio.pause();
+            try {
+                window.currentAudio.pause();
+            } catch (error) {
+                console.log('🔧 Global audio cleanup error (normal):', error.message);
+            }
             window.currentAudio = null;
         }
         
         // Stop all audio elements on the page
         const allAudioElements = document.querySelectorAll('audio');
         allAudioElements.forEach(audio => {
-            audio.pause();
-            audio.currentTime = 0;
+            try {
+                audio.pause();
+                audio.currentTime = 0;
+            } catch (error) {
+                console.log('🔧 Element cleanup error (normal):', error.message);
+            }
         });
         
         this.isPlaying = false;
