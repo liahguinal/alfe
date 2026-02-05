@@ -277,35 +277,10 @@ async function initializeSystem() {
             
             // Start music using the dedicated music controller - IMMEDIATE AUTO-START
             if (musicFiles.length > 0) {
-                console.log('🎵 STARTING MUSIC WITH DEDICATED CONTROLLER');
-                console.log(`🎵 Available music files: ${musicFiles.length}`);
-                
-                // AGGRESSIVE IMMEDIATE START - Multiple attempts
-                if (window.musicController) {
-                    console.log('🎵 Music controller available, starting AGGRESSIVELY...');
-                    
-                    // Attempt 1: Immediate start
-                    window.startMusicController(musicFiles);
-                    
-                    // Attempt 2: Force start after very short delay
-                    setTimeout(() => {
-                        if (!window.musicController.isPlaying) {
-                            console.log('🔄 First attempt failed, trying force start...');
-                            window.musicController.forceStartMusic();
-                        } else {
-                            console.log('✅ Music successfully started on first attempt!');
-                        }
-                    }, 50);
-                    
-                    // Attempt 3: Final check and retry
-                    setTimeout(() => {
-                        if (!window.musicController.isPlaying) {
-                            console.log('🔄 Final attempt: aggressive restart...');
-                            window.musicController.startMusic();
-                        }
-                    }, 200);
-                } else {
-                    console.log('❌ Music controller not available');
+                // NUCLEAR MUSIC CONTROLLER - SILENT START
+                if (window.nuclearMusicController) {
+                    window.nuclearMusicController.loadMusicFiles(musicFiles);
+                    window.nuclearMusicController.startMusic();
                 }
             } else {
                 console.log('No music files loaded, music will not auto-start');
@@ -1291,12 +1266,15 @@ function updateCompactMusicDisplay() {
         return;
     }
     
-    // Get current track from music controller
-    if (window.musicController && window.musicController.getCurrentTrack()) {
-        const track = window.musicController.getCurrentTrack();
-        integratedSongName.textContent = track.name;
-        integratedSongStatus.textContent = `Music: ${window.musicController.isShuffleOn ? 'ON' : 'OFF'} • Pictures: ${isPictureShuffleOn ? 'ON' : 'OFF'}`;
-        console.log(`🎵 UI Updated: Now showing ${track.name}`);
+    // Get current track from nuclear music controller
+    if (window.nuclearMusicController && window.nuclearMusicController.musicFiles.length > 0) {
+        const currentIndex = window.nuclearMusicController.currentTrackIndex;
+        const track = window.nuclearMusicController.musicFiles[currentIndex];
+        
+        if (track) {
+            integratedSongName.textContent = track.name;
+            integratedSongStatus.textContent = 'Music: ON • Pictures: ON';
+        }
     } else {
         // Fallback to old system
         if (currentTrackIndex >= 0 && currentTrackIndex < musicFiles.length) {
@@ -1339,14 +1317,14 @@ function togglePlayback() {
 // These are kept for compatibility but redirect to the music controller
 
 function nextTrack() {
-    if (window.simpleMusicController) {
-        window.simpleMusicController.nextTrack();
+    if (window.nuclearMusicController) {
+        window.nuclearMusicController.nextTrack();
     }
 }
 
 function previousTrack() {
-    if (window.simpleMusicController) {
-        window.simpleMusicController.previousTrack();
+    if (window.nuclearMusicController) {
+        window.nuclearMusicController.previousTrack();
     }
 }
 
@@ -1463,14 +1441,10 @@ function toggleMute() {
     }
 }
 
-// Set volume - DISABLED (Using Music Controller Instead)
+// Set volume - Using Nuclear Music Controller
 function setVolume(value) {
-    console.log('🔄 setVolume called - music controller handles this');
-    
-    // COMPLETELY DISABLED - Music controller handles volume
-    if (window.musicController) {
-        window.musicController.setVolume(value / 100);
-        console.log(`✅ Volume set to ${value}% via music controller`);
+    if (window.nuclearMusicController) {
+        window.nuclearMusicController.setVolume(value / 100);
     }
 }
 

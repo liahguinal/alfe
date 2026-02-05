@@ -1,7 +1,7 @@
-// SIMPLE MUSIC CONTROLLER - GUARANTEED SINGLE AUDIO PLAYBACK
-// This replaces the complex musicController.js with a simple, bulletproof system
+// NUCLEAR MUSIC CONTROLLER - ABSOLUTELY GUARANTEED SINGLE AUDIO
+// This will DESTROY all other music systems and ensure only ONE song plays
 
-class SimpleMusicController {
+class NuclearMusicController {
     constructor() {
         this.currentAudio = null;
         this.currentTrackIndex = 0;
@@ -10,29 +10,59 @@ class SimpleMusicController {
         this.isShuffleOn = true;
         this.volume = 1.0;
         
-        // AGGRESSIVE: Kill all audio every 200ms to prevent overlaps
-        setInterval(() => {
-            this.killAllAudioExceptCurrent();
-        }, 200);
+        // NUCLEAR: Destroy all audio every 50ms
+        this.destroyInterval = setInterval(() => {
+            this.nuclearDestroy();
+        }, 50);
+        
+        // NUCLEAR: Override all global audio functions
+        this.overrideGlobalFunctions();
     }
     
-    // AGGRESSIVE: Kill all audio except current
-    killAllAudioExceptCurrent() {
+    // NUCLEAR: Destroy all audio except current
+    nuclearDestroy() {
+        // Get ALL audio elements
         const allAudio = document.querySelectorAll('audio');
+        let destroyedCount = 0;
+        
         allAudio.forEach(audio => {
             if (audio !== this.currentAudio) {
                 try {
                     audio.pause();
                     audio.currentTime = 0;
                     audio.volume = 0;
+                    audio.src = '';
                     if (audio.parentNode) {
                         audio.parentNode.removeChild(audio);
                     }
+                    destroyedCount++;
                 } catch (error) {
-                    // Silent cleanup
+                    // Silent destruction
                 }
             }
         });
+        
+        // Also destroy any global audio variables
+        if (window.currentAudio && window.currentAudio !== this.currentAudio) {
+            try {
+                window.currentAudio.pause();
+                window.currentAudio = null;
+            } catch (error) {}
+        }
+    }
+    
+    // NUCLEAR: Override all global functions
+    overrideGlobalFunctions() {
+        // Disable old music functions
+        window.loadAndPlayTrackSilently = () => {};
+        window.nextTrackSilently = () => {};
+        window.loadAndPlayTrack = () => {};
+        window.startMusicController = () => {};
+        
+        // Override with our functions
+        window.nextTrack = () => this.nextTrack();
+        window.previousTrack = () => this.previousTrack();
+        window.playTrackFromList = (index) => this.playTrack(index);
     }
     
     // Load music files
@@ -43,25 +73,36 @@ class SimpleMusicController {
         }
     }
     
-    // Simple play track - GUARANTEED SINGLE AUDIO
+    // NUCLEAR: Play track - GUARANTEED SINGLE AUDIO
     async playTrack(index) {
         if (index < 0 || index >= this.musicFiles.length) return false;
         
-        // KILL EVERYTHING FIRST
-        this.stopAllAudio();
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // NUCLEAR DESTRUCTION FIRST
+        this.nuclearDestroy();
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait longer
         
         const track = this.musicFiles[index];
         
         try {
+            // Create new audio
             this.currentAudio = new Audio(track.file);
             this.currentAudio.volume = this.volume;
-            this.currentAudio.addEventListener('ended', () => this.nextTrack());
-            this.currentAudio.addEventListener('error', () => this.nextTrack());
             
+            // Add listeners
+            this.currentAudio.addEventListener('ended', () => {
+                setTimeout(() => this.nextTrack(), 100);
+            });
+            
+            this.currentAudio.addEventListener('error', () => {
+                setTimeout(() => this.nextTrack(), 100);
+            });
+            
+            // Play
             await this.currentAudio.play();
             this.isPlaying = true;
             this.currentTrackIndex = index;
+            
+            // Update UI
             this.updateUI(track.name);
             
             return true;
@@ -74,8 +115,8 @@ class SimpleMusicController {
     async nextTrack() {
         if (this.musicFiles.length === 0) return false;
         
-        this.stopAllAudio();
-        await new Promise(resolve => setTimeout(resolve, 100));
+        this.nuclearDestroy();
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         let nextIndex = (this.currentTrackIndex + 1) % this.musicFiles.length;
         return await this.playTrack(nextIndex);
@@ -85,8 +126,8 @@ class SimpleMusicController {
     async previousTrack() {
         if (this.musicFiles.length === 0) return false;
         
-        this.stopAllAudio();
-        await new Promise(resolve => setTimeout(resolve, 100));
+        this.nuclearDestroy();
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         let prevIndex = (this.currentTrackIndex - 1 + this.musicFiles.length) % this.musicFiles.length;
         return await this.playTrack(prevIndex);
@@ -103,42 +144,6 @@ class SimpleMusicController {
         return await this.playTrack(0);
     }
     
-    // Stop all audio - NUCLEAR OPTION
-    stopAllAudio() {
-        // Stop current audio
-        if (this.currentAudio) {
-            try {
-                this.currentAudio.pause();
-                this.currentAudio.currentTime = 0;
-            } catch (error) {}
-            this.currentAudio = null;
-        }
-        
-        // Stop global audio
-        if (window.currentAudio) {
-            try {
-                window.currentAudio.pause();
-                window.currentAudio.currentTime = 0;
-            } catch (error) {}
-            window.currentAudio = null;
-        }
-        
-        // NUCLEAR: Remove all audio elements
-        const allAudio = document.querySelectorAll('audio');
-        allAudio.forEach(audio => {
-            try {
-                audio.pause();
-                audio.currentTime = 0;
-                audio.volume = 0;
-                if (audio.parentNode) {
-                    audio.parentNode.removeChild(audio);
-                }
-            } catch (error) {}
-        });
-        
-        this.isPlaying = false;
-    }
-    
     // Shuffle music files
     shuffleMusicFiles() {
         for (let i = this.musicFiles.length - 1; i > 0; i--) {
@@ -147,9 +152,8 @@ class SimpleMusicController {
         }
     }
     
-    // Update UI
+    // Update UI - MINIMAL LOGGING
     updateUI(trackName) {
-        // Update integrated display
         const integratedSongName = document.getElementById('integratedSongName');
         const integratedSongStatus = document.getElementById('integratedSongStatus');
         
@@ -158,12 +162,7 @@ class SimpleMusicController {
         }
         
         if (integratedSongStatus) {
-            integratedSongStatus.textContent = `Music: ${this.isShuffleOn ? 'ON' : 'OFF'} • Pictures: ON`;
-        }
-        
-        // Also call the main UI update function
-        if (typeof updateCompactMusicDisplay === 'function') {
-            updateCompactMusicDisplay();
+            integratedSongStatus.textContent = `Music: ON • Pictures: ON`;
         }
     }
     
@@ -176,20 +175,32 @@ class SimpleMusicController {
     }
 }
 
-// Create global instance
-window.simpleMusicController = new SimpleMusicController();
+// NUCLEAR: Destroy all existing music controllers
+if (window.musicController) {
+    window.musicController = null;
+}
+if (window.simpleMusicController) {
+    window.simpleMusicController = null;
+}
 
-// Global functions for HTML buttons
+// Create NUCLEAR instance
+window.nuclearMusicController = new NuclearMusicController();
+
+// NUCLEAR: Override all global functions
 window.nextTrack = function() {
-    window.simpleMusicController.nextTrack();
+    window.nuclearMusicController.nextTrack();
 };
 
 window.previousTrack = function() {
-    window.simpleMusicController.previousTrack();
+    window.nuclearMusicController.previousTrack();
 };
 
 window.playTrackFromList = function(trackIndex) {
-    window.simpleMusicController.playTrack(trackIndex);
+    window.nuclearMusicController.playTrack(trackIndex);
 };
 
-console.log('🎵 Simple Music Controller loaded - GUARANTEED single audio playback');
+window.setVolume = function(value) {
+    window.nuclearMusicController.setVolume(value / 100);
+};
+
+console.log('💥 NUCLEAR Music Controller loaded - GUARANTEED single audio');
