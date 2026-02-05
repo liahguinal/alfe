@@ -10,10 +10,14 @@ class NuclearMusicController {
         this.isShuffleOn = true;
         this.volume = 1.0;
         
-        // NUCLEAR: Destroy all audio every 50ms
+        // NUCLEAR: Destroy all audio every 1000ms (1 second) for debugging
         this.destroyInterval = setInterval(() => {
-            this.nuclearDestroy();
-        }, 50);
+            const audioCount = document.querySelectorAll('audio').length;
+            if (audioCount > 1) {
+                console.log(`⚠️ NUCLEAR: Found ${audioCount} audio elements, destroying extras...`);
+                this.nuclearDestroy();
+            }
+        }, 1000);
         
         // NUCLEAR: Override all global audio functions
         this.overrideGlobalFunctions();
@@ -25,9 +29,12 @@ class NuclearMusicController {
         const allAudio = document.querySelectorAll('audio');
         let destroyedCount = 0;
         
-        allAudio.forEach(audio => {
+        console.log(`💥 NUCLEAR: Found ${allAudio.length} audio elements`);
+        
+        allAudio.forEach((audio, index) => {
             if (audio !== this.currentAudio) {
                 try {
+                    console.log(`💥 NUCLEAR: Destroying audio element ${index}`);
                     audio.pause();
                     audio.currentTime = 0;
                     audio.volume = 0;
@@ -37,17 +44,24 @@ class NuclearMusicController {
                     }
                     destroyedCount++;
                 } catch (error) {
-                    // Silent destruction
+                    console.log(`💥 NUCLEAR: Error destroying audio ${index}:`, error.message);
                 }
+            } else {
+                console.log(`✅ NUCLEAR: Keeping current audio element ${index}`);
             }
         });
+        
+        console.log(`💥 NUCLEAR: Destroyed ${destroyedCount} audio elements`);
         
         // Also destroy any global audio variables
         if (window.currentAudio && window.currentAudio !== this.currentAudio) {
             try {
+                console.log('💥 NUCLEAR: Destroying global currentAudio');
                 window.currentAudio.pause();
                 window.currentAudio = null;
-            } catch (error) {}
+            } catch (error) {
+                console.log('💥 NUCLEAR: Error destroying global audio:', error.message);
+            }
         }
     }
     
@@ -77,23 +91,29 @@ class NuclearMusicController {
     async playTrack(index) {
         if (index < 0 || index >= this.musicFiles.length) return false;
         
+        const track = this.musicFiles[index];
+        console.log(`🎵 NUCLEAR: Starting track ${index} - ${track.name}`);
+        
         // NUCLEAR DESTRUCTION FIRST
+        console.log('💥 NUCLEAR: Destroying all audio...');
         this.nuclearDestroy();
         await new Promise(resolve => setTimeout(resolve, 500)); // Wait longer
-        
-        const track = this.musicFiles[index];
         
         try {
             // Create new audio
             this.currentAudio = new Audio(track.file);
             this.currentAudio.volume = this.volume;
             
+            console.log(`🔊 NUCLEAR: Created audio for ${track.name}`);
+            
             // Add listeners
             this.currentAudio.addEventListener('ended', () => {
+                console.log(`🔚 NUCLEAR: Track ended - ${track.name}`);
                 setTimeout(() => this.nextTrack(), 100);
             });
             
             this.currentAudio.addEventListener('error', () => {
+                console.log(`❌ NUCLEAR: Track error - ${track.name}`);
                 setTimeout(() => this.nextTrack(), 100);
             });
             
@@ -102,35 +122,36 @@ class NuclearMusicController {
             this.isPlaying = true;
             this.currentTrackIndex = index;
             
+            console.log(`✅ NUCLEAR: Successfully playing ${track.name}`);
+            
             // Update UI
             this.updateUI(track.name);
             
             return true;
         } catch (error) {
+            console.log(`❌ NUCLEAR: Failed to play ${track.name}:`, error.name);
             return false;
         }
     }
     
     // Next track
     async nextTrack() {
-        if (this.musicFiles.length === 0) return false;
+        console.log('🔄 NUCLEAR: Next track requested');
+        
+        if (this.musicFiles.length === 0) {
+            console.log('❌ NUCLEAR: No music files available');
+            return false;
+        }
+        
+        console.log(`🔄 NUCLEAR: Current track: ${this.currentTrackIndex}`);
         
         this.nuclearDestroy();
         await new Promise(resolve => setTimeout(resolve, 200));
         
         let nextIndex = (this.currentTrackIndex + 1) % this.musicFiles.length;
+        console.log(`🔄 NUCLEAR: Next track will be: ${nextIndex}`);
+        
         return await this.playTrack(nextIndex);
-    }
-    
-    // Previous track
-    async previousTrack() {
-        if (this.musicFiles.length === 0) return false;
-        
-        this.nuclearDestroy();
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        let prevIndex = (this.currentTrackIndex - 1 + this.musicFiles.length) % this.musicFiles.length;
-        return await this.playTrack(prevIndex);
     }
     
     // Start music
@@ -188,15 +209,26 @@ window.nuclearMusicController = new NuclearMusicController();
 
 // NUCLEAR: Override all global functions
 window.nextTrack = function() {
-    window.nuclearMusicController.nextTrack();
+    console.log('🔄 GLOBAL: nextTrack() called');
+    if (window.nuclearMusicController) {
+        window.nuclearMusicController.nextTrack();
+    } else {
+        console.log('❌ GLOBAL: nuclearMusicController not available');
+    }
 };
 
 window.previousTrack = function() {
-    window.nuclearMusicController.previousTrack();
+    // Disabled - only next track available since shuffle is on
+    console.log('⚠️ GLOBAL: previousTrack() disabled - shuffle mode only supports next');
 };
 
 window.playTrackFromList = function(trackIndex) {
-    window.nuclearMusicController.playTrack(trackIndex);
+    console.log(`🔄 GLOBAL: playTrackFromList(${trackIndex}) called`);
+    if (window.nuclearMusicController) {
+        window.nuclearMusicController.playTrack(trackIndex);
+    } else {
+        console.log('❌ GLOBAL: nuclearMusicController not available');
+    }
 };
 
 window.setVolume = function(value) {

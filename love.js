@@ -277,10 +277,10 @@ async function initializeSystem() {
             
             // Start music using the dedicated music controller - IMMEDIATE AUTO-START
             if (musicFiles.length > 0) {
-                // NUCLEAR MUSIC CONTROLLER - SILENT START
-                if (window.nuclearMusicController) {
-                    window.nuclearMusicController.loadMusicFiles(musicFiles);
-                    window.nuclearMusicController.startMusic();
+                // ULTIMATE MUSIC CONTROLLER - ABSOLUTE GUARANTEE
+                if (window.ultimateMusicController) {
+                    window.ultimateMusicController.loadMusicFiles(musicFiles);
+                    window.ultimateMusicController.startMusic();
                 }
             } else {
                 console.log('No music files loaded, music will not auto-start');
@@ -1266,10 +1266,10 @@ function updateCompactMusicDisplay() {
         return;
     }
     
-    // Get current track from nuclear music controller
-    if (window.nuclearMusicController && window.nuclearMusicController.musicFiles.length > 0) {
-        const currentIndex = window.nuclearMusicController.currentTrackIndex;
-        const track = window.nuclearMusicController.musicFiles[currentIndex];
+    // Get current track from ultimate music controller
+    if (window.ultimateMusicController && window.ultimateMusicController.musicFiles.length > 0) {
+        const currentIndex = window.ultimateMusicController.currentTrackIndex;
+        const track = window.ultimateMusicController.musicFiles[currentIndex];
         
         if (track) {
             integratedSongName.textContent = track.name;
@@ -1317,15 +1317,18 @@ function togglePlayback() {
 // These are kept for compatibility but redirect to the music controller
 
 function nextTrack() {
-    if (window.nuclearMusicController) {
-        window.nuclearMusicController.nextTrack();
+    console.log('🔄 LOVE.JS: nextTrack() called');
+    if (window.ultimateMusicController) {
+        console.log('✅ LOVE.JS: Calling ultimateMusicController.nextTrack()');
+        window.ultimateMusicController.nextTrack();
+    } else {
+        console.log('❌ LOVE.JS: ultimateMusicController not available');
     }
 }
 
 function previousTrack() {
-    if (window.nuclearMusicController) {
-        window.nuclearMusicController.previousTrack();
-    }
+    // Disabled - only next track available since shuffle is on
+    console.log('⚠️ LOVE.JS: previousTrack() disabled - shuffle mode only supports next');
 }
 
 // Create gentle hearts when track changes - UNLIMITED VERSION
@@ -1441,10 +1444,10 @@ function toggleMute() {
     }
 }
 
-// Set volume - Using Nuclear Music Controller
+// Set volume - Using Ultimate Music Controller
 function setVolume(value) {
-    if (window.nuclearMusicController) {
-        window.nuclearMusicController.setVolume(value / 100);
+    if (window.ultimateMusicController) {
+        window.ultimateMusicController.setVolume(value / 100);
     }
 }
 
@@ -2130,13 +2133,6 @@ document.addEventListener('keydown', (event) => {
             // Use music controller for next track
             if (window.musicController) {
                 window.musicController.nextTrack();
-            }
-            break;
-        case 'p':
-        case 'P':
-            // Use music controller for previous track
-            if (window.musicController) {
-                window.musicController.previousTrack();
             }
             break;
         case 'b':
