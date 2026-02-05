@@ -199,9 +199,9 @@ function startMusicAndSlideshow() {
     }
     
     // Start music with user interaction
-    if (window.musicController && musicFiles.length > 0) {
+    if (window.simpleMusicController && musicFiles.length > 0) {
         console.log('🎵 Starting music with user interaction...');
-        window.musicController.startMusic();
+        window.simpleMusicController.startMusic();
     }
     
     // Ensure slideshow is running
@@ -1339,20 +1339,14 @@ function togglePlayback() {
 // These are kept for compatibility but redirect to the music controller
 
 function nextTrack() {
-    console.log('🔄 Redirecting to music controller nextTrack');
-    if (window.musicController) {
-        window.musicController.nextTrack();
-    } else {
-        console.log('❌ Music controller not available');
+    if (window.simpleMusicController) {
+        window.simpleMusicController.nextTrack();
     }
 }
 
 function previousTrack() {
-    console.log('🔄 Redirecting to music controller previousTrack');
-    if (window.musicController) {
-        window.musicController.previousTrack();
-    } else {
-        console.log('❌ Music controller not available');
+    if (window.simpleMusicController) {
+        window.simpleMusicController.previousTrack();
     }
 }
 

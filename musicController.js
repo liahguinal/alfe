@@ -9,16 +9,16 @@ class MusicController {
         this.isPlaying = false;
         this.isShuffleOn = true;
         this.volume = 1.0; // MAXIMUM VOLUME
-        this.userInteractionSetup = false; // Prevent multiple interaction setups
+        this.userInteractionSetup = false;
         
         // Bind event handlers to maintain proper 'this' context
         this.boundOnTrackEnded = this.onTrackEnded.bind(this);
         this.boundOnTrackError = this.onTrackError.bind(this);
         
-        console.log('🎵 MusicController initialized with volume:', this.volume);
-        
-        // Try immediate autoplay bypass
-        this.setupImmediateAutoplay();
+        // AGGRESSIVE: Kill all audio every 100ms to prevent overlaps
+        setInterval(() => {
+            this.killAllAudioExceptCurrent();
+        }, 100);
     }
     
     // Aggressive autoplay bypass - try multiple methods immediately
@@ -79,7 +79,6 @@ class MusicController {
     // Play specific track by index - SINGLE INSTANCE ENFORCEMENT
     async playTrack(index) {
         if (index < 0 || index >= this.musicFiles.length) {
-            console.error(`❌ Invalid track index: ${index}`);
             return false;
         }
         
@@ -90,7 +89,6 @@ class MusicController {
         await new Promise(resolve => setTimeout(resolve, 250));
         
         const track = this.musicFiles[index];
-        console.log(`🎵 SINGLE-PLAY: Track ${index} - ${track.name}`);
         
         try {
             // Wait a bit to ensure all audio is stopped
@@ -98,8 +96,6 @@ class MusicController {
             
             this.currentAudio = new Audio(track.file);
             this.currentAudio.volume = this.volume;
-            
-            console.log(`🔊 Audio created with volume: ${this.volume} for ${track.name}`);
             
             // Add event listeners BEFORE playing
             this.currentAudio.addEventListener('ended', this.boundOnTrackEnded);
@@ -477,8 +473,6 @@ class MusicController {
     
     // Stop all audio instances to prevent conflicts
     stopAllAudio() {
-        console.log('🛑 Stopping ALL audio instances');
-        
         // Stop current music controller audio
         if (this.currentAudio) {
             try {
@@ -487,7 +481,7 @@ class MusicController {
                 this.currentAudio.removeEventListener('ended', this.boundOnTrackEnded);
                 this.currentAudio.removeEventListener('error', this.boundOnTrackError);
             } catch (error) {
-                console.log('🔧 Audio cleanup error (normal):', error.message);
+                // Silent cleanup
             }
             this.currentAudio = null;
         }
@@ -496,25 +490,30 @@ class MusicController {
         if (window.currentAudio) {
             try {
                 window.currentAudio.pause();
+                window.currentAudio.currentTime = 0;
             } catch (error) {
-                console.log('🔧 Global audio cleanup error (normal):', error.message);
+                // Silent cleanup
             }
             window.currentAudio = null;
         }
         
-        // Stop all audio elements on the page
+        // AGGRESSIVE: Stop ALL audio elements on the entire page
         const allAudioElements = document.querySelectorAll('audio');
-        allAudioElements.forEach(audio => {
+        allAudioElements.forEach((audio, index) => {
             try {
                 audio.pause();
                 audio.currentTime = 0;
+                audio.volume = 0;
+                // Remove the element completely
+                if (audio.parentNode) {
+                    audio.parentNode.removeChild(audio);
+                }
             } catch (error) {
-                console.log('🔧 Element cleanup error (normal):', error.message);
+                // Silent cleanup
             }
         });
         
         this.isPlaying = false;
-        console.log('🛑 All audio stopped');
     }
     
     // Shuffle the music files array

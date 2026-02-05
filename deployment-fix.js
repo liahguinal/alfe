@@ -19,9 +19,9 @@ function setupSimpleAutoplay() {
         
         console.log('🎵 User interaction detected - starting music');
         
-        // Try to start music through the music controller
-        if (window.musicController && window.musicController.musicFiles.length > 0) {
-            window.musicController.startMusic();
+        // Try to start music through the simple music controller
+        if (window.simpleMusicController && window.simpleMusicController.musicFiles.length > 0) {
+            window.simpleMusicController.startMusic();
         } else if (typeof nextTrack === 'function') {
             // Fallback to old system
             setTimeout(nextTrack, 500);
