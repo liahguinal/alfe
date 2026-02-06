@@ -14,11 +14,14 @@ class UltimateMusicController {
         // ULTIMATE: Track ALL audio elements with unique IDs
         this.audioRegistry = new Map();
         this.nextAudioId = 1;
+        this.isLoadingPhase = true; // NEW: Don't destroy during loading
         
-        // ULTIMATE: Monitor and destroy every 100ms
+        // ULTIMATE: Monitor and destroy every 1000ms (less aggressive)
         this.monitorInterval = setInterval(() => {
-            this.ultimateMonitor();
-        }, 100);
+            if (!this.isLoadingPhase) { // Only monitor after loading
+                this.ultimateMonitor();
+            }
+        }, 1000);
         
         // ULTIMATE: Override Audio constructor to track all audio
         this.overrideAudioConstructor();
@@ -62,6 +65,10 @@ class UltimateMusicController {
     
     // ULTIMATE: Monitor and destroy unauthorized audio
     ultimateMonitor() {
+        if (this.isLoadingPhase) {
+            return; // Don't monitor during loading phase
+        }
+        
         let destroyedCount = 0;
         
         // Check registry for unauthorized audio
@@ -108,10 +115,11 @@ class UltimateMusicController {
     // Load music files
     loadMusicFiles(files) {
         this.musicFiles = files;
+        this.isLoadingPhase = false; // Loading complete, enable monitoring
         if (this.isShuffleOn) {
             this.shuffleMusicFiles();
         }
-        console.log(`💎 ULTIMATE: Loaded ${files.length} music files`);
+        console.log(`💎 ULTIMATE: Loaded ${files.length} music files - monitoring enabled`);
     }
     
     // ULTIMATE: Play track with primary key system
